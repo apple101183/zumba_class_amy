@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zumba 歌單管理</title>
+<style>
+:root {
+  --primary: #8B5CF6;
+  --primary-dark: #7C3AED;
+  --secondary: #EC4899;
+  --accent: #F59E0B;
+  --bg: #F5F3FF;
+  --card: #FFFFFF;
+  --text: #1F2937;
+  --muted: #6B7280;
+  --border: #E5E7EB;
+  --success: #10B981;
+  --danger: #EF4444;
+  --info: #3B82F6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* Header */
+.hdr{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.hdr-title{font-size:1.4rem;font-weight:800;margin-bottom:10px}
+.hdr-title span{color:#FDE68A}
+.nav{display:flex;gap:4px}
+.nav-btn{padding:8px 14px;border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:8px 8px 0 0;cursor:pointer;font-size:.85rem;font-weight:500;transition:background .2s}
+.nav-btn.act{background:#fff;color:var(--primary);font-weight:700}
+.nav-btn:hover:not(.act){background:rgba(255,255,255,.3)}
+
+/* Layout */
+.wrap{padding:16px;max-width:1200px;margin:0 auto}
+.page{display:none}.page.act{display:block}
+
+/* Card */
+.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px}
+
+/* Buttons */
+.btn{padding:7px 14px;border:none;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn-p{background:var(--primary);color:#fff}.btn-p:hover{background:var(--primary-dark)}
+.btn-s{background:var(--secondary);color:#fff}
+.btn-ok{background:var(--success);color:#fff}
+.btn-del{background:var(--danger);color:#fff}
+.btn-g{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-g:hover{background:var(--bg)}
+.btn-sm{padding:4px 9px;font-size:.78rem}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.inp-s{flex:1;min-width:180px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;outline:none}
+.inp-s:focus{border-color:var(--primary)}
+.sel{padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;background:#fff;outline:none;cursor:pointer}
+.sel:focus{border-color:var(--primary)}
+
+/* Stats */
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.sbadge{padding:5px 10px;border-radius:20px;font-size:.78rem;font-weight:600}
+
+/* Song grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.song-card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid var(--primary);cursor:pointer;transition:transform .2s,box-shadow .2s}
+.song-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.sc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.sc-name{font-size:.95rem;font-weight:700;flex:1;margin-right:8px}
+.fbadge{padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:600;white-space:nowrap}
+.sc-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.tag{padding:2px 8px;border-radius:20px;font-size:.72rem;background:var(--bg);color:var(--muted)}
+.tag-zin{background:#FEF3C7;color:#92400E}
+.sc-stats{display:flex;gap:12px;font-size:.78rem;color:var(--muted)}
+.dots{display:flex;gap:2px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.dot.on{background:var(--primary)}
+.dot.h.on{background:var(--secondary)}
+.sc-actions{display:flex;gap:4px;margin-top:8px}
+.sc-note{font-size:.72rem;color:var(--muted);margin-top:6px;border-top:1px solid var(--border);padding-top:6px;word-break:break-all}
+
+/* Familiarity */
+.f1{background:#FEE2E2;color:#991B1B}
+.f2{background:#FEF3C7;color:#92400E}
+.f3{background:#DBEAFE;color:#1E40AF}
+.f4{background:#D1FAE5;color:#065F46}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto}
+.modal-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.modal-title{font-size:1.1rem;font-weight:700;color:var(--primary)}
+.modal-x{background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--muted);line-height:1}
+
+/* Form */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:.83rem;font-weight:600;margin-bottom:5px}
+.fi,.fsel,.fta{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;color:var(--text);outline:none;transition:border-color .2s;background:#fff}
+.fi:focus,.fsel:focus,.fta:focus{border-color:var(--primary)}
+.fta{resize:vertical;min-height:72px;font-family:inherit}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rating-g{display:flex;gap:5px}
+.rbtn{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:.83rem;font-weight:600;color:var(--muted);transition:all .2s}
+.rbtn.sel{background:var(--primary);border-color:var(--primary);color:#fff}
+.rbtn.h.sel{background:var(--secondary);border-color:var(--secondary);color:#fff}
+.toggle-g{display:flex;align-items:center;gap:10px}
+.toggle{position:relative;width:46px;height:25px}
+.toggle input{opacity:0;width:0;height:0}
+.tslider{position:absolute;inset:0;background:var(--border);border-radius:13px;cursor:pointer;transition:.3s}
+.tslider::before{content:'';position:absolute;width:19px;height:19px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.tslider{background:var(--primary)}
+input:checked+.tslider::before{transform:translateX(21px)}
+
+/* Dates page */
+.dates-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.dchip{display:flex;align-items:center;gap:6px;padding:5px 11px;background:#FEE2E2;color:#991B1B;border-radius:20px;font-size:.83rem;font-weight:500}
+.dchip button{background:none;border:none;cursor:pointer;color:#991B1B;font-size:1rem;line-height:1;padding:0}
+
+/* ── Plan Tabs ── */
+.plan-tabs-wrap{display:flex;align-items:center;gap:0;margin-bottom:0;overflow-x:auto;padding-bottom:2px}
+.plan-tabs-wrap::-webkit-scrollbar{height:3px}
+.plan-tab{display:flex;align-items:center;gap:5px;padding:7px 12px;border:1.5px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;background:#fff;cursor:pointer;font-size:.83rem;font-weight:500;white-space:nowrap;transition:all .2s;margin-right:3px;color:var(--muted)}
+.plan-tab.act{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+.plan-tab:hover:not(.act){background:var(--bg);border-color:var(--primary);color:var(--primary)}
+.plan-tab-name{max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.plan-tab-edit{background:none;border:none;cursor:pointer;font-size:.78rem;opacity:.7;padding:0 0 0 2px;line-height:1}
+.plan-tab-edit:hover{opacity:1}
+.plan-tab.act .plan-tab-edit{color:rgba(255,255,255,.85)}
+.plan-tab.act .plan-tab-edit:hover{color:#fff}
+.plan-tab-del{background:none;border:none;cursor:pointer;font-size:.9rem;opacity:.6;padding:0 0 0 1px;line-height:1}
+.plan-tab-del:hover{opacity:1}
+.plan-tab.act .plan-tab-del{color:rgba(255,255,255,.8)}
+.plan-tab.act .plan-tab-del:hover{color:#fff}
+.plan-add-btn{padding:7px 11px;border:1.5px dashed var(--border);border-bottom:none;border-radius:8px 8px 0 0;background:transparent;cursor:pointer;font-size:1rem;color:var(--muted);white-space:nowrap;transition:all .2s}
+.plan-add-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--bg)}
+.plan-tabs-line{border-bottom:2px solid var(--primary);margin-bottom:14px}
+
+/* Rundown */
+.rd-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.panel-h{font-size:.95rem;font-weight:700;color:var(--primary);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.avail-list{max-height:580px;overflow-y:auto}
+.avail-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:5px;border:1.5px solid var(--border);cursor:grab;transition:all .2s;user-select:none}
+.avail-item:hover{border-color:var(--primary);background:var(--bg)}
+.avail-item.in-rd{opacity:.45;cursor:default}
+.avail-item.dragging{opacity:.4}
+.ai-name{font-size:.85rem;font-weight:600}
+.ai-meta{font-size:.72rem;color:var(--muted)}
+.rd-list{min-height:360px;max-height:600px;overflow-y:auto}
+.rd-item{display:flex;align-items:center;gap:7px;padding:8px 10px;background:#fff;border-radius:8px;margin-bottom:5px;border:1.5px solid var(--border);cursor:grab;transition:all .2s;user-select:none}
+.rd-item:hover{border-color:var(--primary)}
+.rd-item.drag-over{border-color:var(--accent);background:#FFFBEB}
+.rd-item.water{background:#EFF6FF;border-color:#93C5FD}
+.rd-item.note-item{background:#FFFBEB;border-color:#FCD34D;cursor:default;align-items:flex-start}
+.rd-num{font-size:.78rem;font-weight:700;color:var(--muted);min-width:22px;padding-top:2px}
+.rd-info{flex:1}
+.rd-name{font-size:.85rem;font-weight:600}
+.rd-meta{font-size:.72rem;color:var(--muted)}
+.rd-acts{display:flex;gap:3px;flex-shrink:0}
+.ibtn{width:26px;height:26px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:opacity .2s}
+.ibtn:hover{opacity:.75}
+.ibtn.up,.ibtn.dn{background:#EDE9FE;color:var(--primary)}
+.ibtn.rm{background:#FEE2E2;color:var(--danger)}
+.dropzone{border:2px dashed var(--border);border-radius:8px;padding:18px;text-align:center;color:var(--muted);font-size:.83rem}
+.dropzone.drag-over{border-color:var(--primary);background:var(--bg)}
+.export-ta{width:100%;height:280px;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:.78rem;resize:vertical;background:#F9FAFB}
+
+/* Note textarea inside rundown */
+.note-ta{width:100%;border:none;background:transparent;font-size:.83rem;color:var(--text);resize:none;outline:none;font-family:inherit;line-height:1.55;padding:0;min-height:44px}
+.note-ta::placeholder{color:#D97706;opacity:.75}
+
+/* Confirm / Rename */
+.confirm-box{background:#fff;border-radius:12px;padding:22px;max-width:340px;width:100%;text-align:center}
+.confirm-box h3{margin-bottom:8px}
+.confirm-box p{color:var(--muted);margin-bottom:18px;font-size:.85rem}
+.confirm-acts{display:flex;gap:8px;justify-content:center}
+.rename-box{background:#fff;border-radius:12px;padding:22px;max-width:340px;width:100%}
+.rename-box h3{margin-bottom:14px;color:var(--primary);font-size:1rem;font-weight:700}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:18px;right:18px;z-index:400;display:flex;flex-direction:column;gap:6px}
+.toast{padding:9px 14px;border-radius:8px;color:#fff;font-size:.83rem;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:slin .3s ease}
+.toast.ok{background:var(--success)}.toast.err{background:var(--danger)}.toast.inf{background:var(--info)}
+@keyframes slin{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Empty */
+.empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.empty .ico{font-size:2.8rem;margin-bottom:10px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@media(max-width:700px){
+  .rd-layout{grid-template-columns:1fr}
+  .frow{grid-template-columns:1fr}
+  .hdr-title{font-size:1.15rem}
+  .nav-btn{padding:7px 10px;font-size:.78rem}
+}
+#sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#6EE7B7;margin-right:5px;vertical-align:middle}
+#sync-status{font-size:.72rem;opacity:.85;vertical-align:middle}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">💃 <span>Zumba</span> 歌單管理 <span id="sync-dot"></span><span id="sync-status">連線中…</span></div>
+  <nav class="nav">
+    <button class="nav-btn act" onclick="sw('songs')">🎵 歌單</button>
+    <button class="nav-btn" onclick="sw('dates')">📅 停課</button>
+    <button class="nav-btn" onclick="sw('rundown')">▶️ 規劃</button>
+  </nav>
+</div>
+
+<div class="wrap">
+
+<!-- ── Page: Songs ── -->
+<div id="pg-songs" class="page act">
+  <div class="toolbar">
+    <input type="text" class="inp-s" id="q" placeholder="🔍 搜尋歌曲…" oninput="renderSongs()">
+    <select class="sel" id="ff" onchange="renderSongs()">
+      <option value="">全部熟悉度</option>
+      <option value="1">初識（1次）</option>
+      <option value="2">熟悉中（2-6次）</option>
+      <option value="3">熟練（7-11次）</option>
+      <option value="4">精熟（≥12次）</option>
+    </select>
+    <select class="sel" id="fz" onchange="renderSongs()">
+      <option value="">ZIN 全部</option>
+      <option value="y">ZIN</option>
+      <option value="n">非 ZIN</option>
+    </select>
+    <select class="sel" id="fs" onchange="renderSongs()">
+      <option value="joinDate">依加入日期</option>
+      <option value="name">依歌名</option>
+      <option value="count">依次數</option>
+      <option value="fam">依熟悉度</option>
+    </select>
+    <button class="btn btn-p" onclick="openAdd()">➕ 新增歌曲</button>
+  </div>
+  <div class="stats" id="stats-bar"></div>
+  <div id="songs-out"></div>
+</div>
+
+<!-- ── Page: Dates ── -->
+<div id="pg-dates" class="page">
+  <div class="card">
+    <h2 style="font-size:1rem;font-weight:700;margin-bottom:12px;color:var(--primary)">📅 停課日期管理</h2>
+    <p style="font-size:.83rem;color:var(--muted);margin-bottom:14px">停課日將從歌曲練習次數計算中扣除。</p>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <input type="date" id="new-date" class="fi" style="width:auto;flex:1;min-width:150px">
+      <button class="btn btn-p" onclick="addDate()">➕ 新增停課日</button>
+    </div>
+    <div id="dates-out" class="dates-wrap"></div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:.88rem;font-weight:700;margin-bottom:8px">⚠️ 危險操作</h3>
+    <button class="btn btn-del btn-sm" onclick="confirmClear()">🗑️ 清除所有資料</button>
+  </div>
+</div>
+
+<!-- ── Page: Rundown ── -->
+<div id="pg-rundown" class="page">
+
+  <!-- Plan tabs -->
+  <div id="plan-tabs-wrap" class="plan-tabs-wrap"></div>
+  <div class="plan-tabs-line"></div>
+
+  <div class="rd-layout">
+    <!-- Left: available songs -->
+    <div>
+      <div class="panel-h">
+        <span>🎵 歌曲庫</span>
+        <input type="text" id="rdq" class="inp-s" style="max-width:160px;padding:4px 8px;font-size:.78rem" placeholder="搜尋…" oninput="renderAvail()">
+      </div>
+      <div id="avail-out" class="avail-list"></div>
+    </div>
+
+    <!-- Right: rundown -->
+    <div>
+      <div class="panel-h">
+        <span>📋 Rundown <span id="rd-cnt" style="font-size:.78rem;color:var(--muted)">(0首)</span></span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-g" onclick="addWater()">💧 喝水</button>
+          <button class="btn btn-sm" style="background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;font-weight:600" onclick="addNote()">📝 備註</button>
+          <button class="btn btn-sm btn-del" onclick="clearRD()">清空</button>
+        </div>
+      </div>
+      <div id="rd-out" class="rd-list"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ok" onclick="doExport()">📋 匯出課表</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export area -->
+  <div id="exp-area" style="display:none;margin-top:14px">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 style="font-size:.95rem;font-weight:700;color:var(--primary)">📋 課表文字</h3>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-p" onclick="copyExp()">📋 複製</button>
+          <button class="btn btn-sm btn-g" onclick="document.getElementById('exp-area').style.display='none'">關閉</button>
+        </div>
+      </div>
+      <textarea id="exp-ta" class="export-ta" readonly></textarea>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- Song Modal -->
+<div class="overlay" id="song-modal">
+  <div class="modal">
+    <div class="modal-h">
+      <h2 class="modal-title" id="modal-ttl">新增歌曲</h2>
+      <button class="modal-x" onclick="closeModal()">×</button>
+    </div>
+    <form id="song-form" onsubmit="saveSong(event)">
+      <input type="hidden" id="eid">
+      <div class="fg">
+        <label class="fl">歌名 *</label>
+        <input type="text" id="fn" class="fi" placeholder="輸入歌名" required>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label class="fl">曲風</label>
+          <input type="text" id="fst" class="fi" placeholder="Salsa, Merengue…" list="style-list">
+          <datalist id="style-list">
+            <option value="Salsa"><option value="Merengue"><option value="Cumbia">
+            <option value="Reggaeton"><option value="Cha Cha"><option value="Mambo">
+            <option value="Tango"><option value="Flamenco"><option value="Hip Hop">
+            <option value="Pop"><option value="Samba"><option value="Bachata">
+          </datalist>
+        </div>
+        <div class="fg">
+          <label class="fl">加入日期 *</label>
+          <input type="date" id="fjd" class="fi" required>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label class="fl">❤️ 心跳強度</label>
+          <div class="rating-g" id="hr-g">
+            <button type="button" class="rbtn h" data-v="1" onclick="setR('hr',1)">1</button>
+            <button type="button" class="rbtn h" data-v="2" onclick="setR('hr',2)">2</button>
+            <button type="button" class="rbtn h" data-v="3" onclick="setR('hr',3)">3</button>
+            <button type="button" class="rbtn h" data-v="4" onclick="setR('hr',4)">4</button>
+            <button type="button" class="rbtn h" data-v="5" onclick="setR('hr',5)">5</button>
+          </div>
+          <input type="hidden" id="fhr" value="3">
+        </div>
+        <div class="fg">
+          <label class="fl">💃 舞步難易</label>
+          <div class="rating-g" id="dif-g">
+            <button type="button" class="rbtn" data-v="1" onclick="setR('dif',1)">1</button>
+            <button type="button" class="rbtn" data-v="2" onclick="setR('dif',2)">2</button>
+            <button type="button" class="rbtn" data-v="3" onclick="setR('dif',3)">3</button>
+            <button type="button" class="rbtn" data-v="4" onclick="setR('dif',4)">4</button>
+            <button type="button" class="rbtn" data-v="5" onclick="setR('dif',5)">5</button>
+          </div>
+          <input type="hidden" id="fdif" value="3">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label class="fl">ZIN 歌曲</label>
+          <div class="toggle-g">
+            <label class="toggle">
+              <input type="checkbox" id="fzin" onchange="toggleZIN()">
+              <span class="tslider"></span>
+            </label>
+            <span id="zin-lbl" style="font-size:.83rem;color:var(--muted)">非 ZIN</span>
+          </div>
+        </div>
+        <div class="fg" id="zinnum-g" style="display:none">
+          <label class="fl">ZIN 期數</label>
+          <input type="text" id="fznum" class="fi" placeholder="例：Z81">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">備註</label>
+        <textarea id="fnote" class="fta" placeholder="備註…"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button type="button" class="btn btn-g" onclick="closeModal()">取消</button>
+        <button type="submit" class="btn btn-p">💾 儲存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div class="overlay" id="cf-overlay">
+  <div class="confirm-box">
+    <h3 id="cf-ttl">確認</h3>
+    <p id="cf-msg"></p>
+    <div class="confirm-acts">
+      <button class="btn btn-g" onclick="closeCF()">取消</button>
+      <button class="btn btn-del" id="cf-ok">確定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename plan modal -->
+<div class="overlay" id="rename-overlay">
+  <div class="rename-box">
+    <h3>✏️ 重新命名規劃版本</h3>
+    <input type="text" id="rename-inp" class="fi" placeholder="輸入名稱…" maxlength="20"
+      onkeydown="if(event.key==='Enter')doRename()">
+    <div class="confirm-acts" style="margin-top:14px">
+      <button class="btn btn-g" onclick="closeRename()">取消</button>
+      <button class="btn btn-p" onclick="doRename()">確定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+const SK = 'zumba_v1';
+const DEF_CANCELLED = [
+  '2025-11-12','2025-11-19','2025-11-26',
+  '2025-12-03','2025-12-10','2025-12-24','2025-12-31',
+  '2026-01-14','2026-02-18','2026-03-25',
+  '2026-04-01','2026-04-08'
+];
+
+// plans: [{id, name, items:[{type:'song'|'water'|'note', sid?, text?}]}]
+let S = { songs:[], cancelled:[...DEF_CANCELLED], plans:[], curPlan:null };
+
+// ── Firebase ───────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBDy4Dd5OkH5_-27t0og1fSn10KVqHqZWU",
+  authDomain: "zumba-db.firebaseapp.com",
+  databaseURL: "https://zumba-db-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "zumba-db",
+  storageBucket: "zumba-db.firebasestorage.app",
+  messagingSenderId: "1028299253147",
+  appId: "1:1028299253147:web:bb1d064c9ed23c40bd2d3e"
+};
+firebase.initializeApp(firebaseConfig);
+const fbRef = firebase.database().ref('data');
+let ignoreNextSync = false;
+
+function setSyncStatus(msg, ok=true){
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-status');
+  if(dot) dot.style.background = ok ? '#6EE7B7' : '#FCA5A5';
+  if(txt) txt.textContent = msg;
+}
+
+function save(){
+  localStorage.setItem(SK, JSON.stringify(S));
+  ignoreNextSync = true;
+  fbRef.set(JSON.parse(JSON.stringify(S)))
+    .catch(()=>toast('雲端儲存失敗，請檢查網路','err'));
+}
+
+function migrateState(){
+  if(S.rd !== undefined && (!S.plans || !S.plans.length)){
+    S.plans = [{id:uid(), name:'課程一', items: S.rd}];
+    delete S.rd;
+  }
+  if(!S.plans||!S.plans.length) S.plans=[{id:uid(),name:'課程一',items:[]}];
+  if(!S.curPlan||!S.plans.find(p=>p.id===S.curPlan)) S.curPlan=S.plans[0].id;
+}
+
+function renderAll(){
+  renderSongs();
+  renderDates();
+  const pg=document.querySelector('.page.act');
+  if(pg?.id==='pg-rundown'){ renderPlanTabs(); renderAvail(); renderRD(); }
+}
+
+function startSyncListener(){
+  fbRef.on('value', snap=>{
+    if(ignoreNextSync){ ignoreNextSync=false; return; }
+    const data=snap.val();
+    if(!data) return;
+    S={...S,...data};
+    migrateState();
+    localStorage.setItem(SK, JSON.stringify(S));
+    renderAll();
+    toast('已從其他裝置同步','inf');
+  });
+}
+
+function load(){
+  // 先從 localStorage 快速顯示（避免白畫面）
+  try{
+    const raw=localStorage.getItem(SK);
+    if(raw){ const saved=JSON.parse(raw); S={...S,...saved}; }
+  }catch(e){}
+  migrateState();
+  renderAll();
+
+  // 再從 Firebase 載入最新資料
+  fbRef.once('value').then(snap=>{
+    const data=snap.val();
+    if(data){
+      S={...S,...data};
+      migrateState();
+      localStorage.setItem(SK, JSON.stringify(S));
+      renderAll();
+    } else {
+      fbRef.set(JSON.parse(JSON.stringify(S)));
+    }
+    setSyncStatus('已連線');
+    startSyncListener();
+  }).catch(()=>{
+    setSyncStatus('離線模式', false);
+    toast('無法連線雲端，使用本機資料','err');
+  });
+}
+
+function getCurPlan(){ return S.plans.find(p=>p.id===S.curPlan)||S.plans[0]; }
+function getCurItems(){ return getCurPlan().items; }
+
+// ── Utils ──────────────────────────────────────────────
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function toDS(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseD(s){ if(!s) return null; const d=new Date(s+'T00:00:00'); return isNaN(d)?null:d; }
+function fmtD(s){
+  const d=parseD(s); if(!d) return s||'';
+  return d.getFullYear()+'/'+(d.getMonth()+1+'').padStart(2,'0')+'/'+(''+d.getDate()).padStart(2,'0');
+}
+
+function calcCount(joinDate){
+  const join=parseD(joinDate); if(!join) return 0;
+  const today=new Date(); today.setHours(0,0,0,0);
+  if(join>today) return 0;
+  let n=0, cur=new Date(join);
+  while(cur<=today){ if(!S.cancelled.includes(toDS(cur))) n++; cur.setDate(cur.getDate()+7); }
+  return n;
+}
+
+function getFam(n){
+  if(n<=1) return {lv:1,lbl:'初識',cls:'f1'};
+  if(n<=6) return {lv:2,lbl:'熟悉中',cls:'f2'};
+  if(n<=11) return {lv:3,lbl:'熟練',cls:'f3'};
+  return {lv:4,lbl:'精熟',cls:'f4'};
+}
+
+function dots(v,max,heart){
+  let h='<div class="dots">';
+  for(let i=1;i<=max;i++) h+=`<div class="dot${heart?' h':''}${i<=v?' on':''}"></div>`;
+  return h+'</div>';
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Toast ──────────────────────────────────────────────
+function toast(msg,type='ok'){
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`; t.textContent=msg; c.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+// ── Navigation ─────────────────────────────────────────
+function sw(pg){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('act'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('pg-'+pg).classList.add('act');
+  const idx=['songs','dates','rundown'].indexOf(pg);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('act');
+  if(pg==='songs') renderSongs();
+  if(pg==='dates') renderDates();
+  if(pg==='rundown'){ renderPlanTabs(); renderAvail(); renderRD(); }
+}
+
+// ── Songs Page ─────────────────────────────────────────
+function renderSongs(){
+  const q=document.getElementById('q').value.toLowerCase();
+  const ff=document.getElementById('ff').value;
+  const fz=document.getElementById('fz').value;
+  const fs=document.getElementById('fs').value;
+
+  let list=S.songs.map(s=>{ const cnt=calcCount(s.joinDate), fam=getFam(cnt); return {...s,cnt,fam}; });
+  if(q) list=list.filter(s=>s.name.toLowerCase().includes(q)||(s.style||'').toLowerCase().includes(q)||(s.notes||'').toLowerCase().includes(q));
+  if(ff) list=list.filter(s=>s.fam.lv==ff);
+  if(fz==='y') list=list.filter(s=>s.isZIN);
+  if(fz==='n') list=list.filter(s=>!s.isZIN);
+  list.sort((a,b)=>{
+    if(fs==='name') return a.name.localeCompare(b.name,'zh');
+    if(fs==='count') return b.cnt-a.cnt;
+    if(fs==='fam') return b.fam.lv-a.fam.lv;
+    return (a.joinDate||'').localeCompare(b.joinDate||'');
+  });
+
+  const tot=S.songs.length, bf=[0,0,0,0];
+  S.songs.forEach(s=>{ bf[getFam(calcCount(s.joinDate)).lv-1]++; });
+  document.getElementById('stats-bar').innerHTML=
+    `<span class="sbadge" style="background:#F3F4F6;color:#374151">共 ${tot} 首</span>`+
+    `<span class="sbadge f1">初識 ${bf[0]}</span>`+
+    `<span class="sbadge f2">熟悉中 ${bf[1]}</span>`+
+    `<span class="sbadge f3">熟練 ${bf[2]}</span>`+
+    `<span class="sbadge f4">精熟 ${bf[3]}</span>`;
+
+  const out=document.getElementById('songs-out');
+  if(!list.length){
+    out.innerHTML=`<div class="empty"><div class="ico">🎵</div><p>${!S.songs.length?'還沒有歌曲，點「新增歌曲」開始！':'找不到符合條件的歌曲'}</p></div>`;
+    return;
+  }
+  out.innerHTML=`<div class="grid">${list.map(s=>songCard(s)).join('')}</div>`;
+}
+
+function songCard(s){
+  return `<div class="song-card" onclick="openEdit('${s.id}')">
+    <div class="sc-head">
+      <div class="sc-name">${esc(s.name)}</div>
+      <span class="fbadge ${s.fam.cls}">${s.fam.lbl}</span>
+    </div>
+    <div class="sc-meta">
+      ${s.style?`<span class="tag">${esc(s.style)}</span>`:''}
+      ${s.isZIN?`<span class="tag tag-zin">ZIN${s.zinNum?' '+esc(s.zinNum):''}</span>`:''}
+      <span class="tag">第 ${s.cnt} 次</span>
+      <span class="tag">加入 ${fmtD(s.joinDate)}</span>
+    </div>
+    <div class="sc-stats">
+      <span>❤️ ${dots(s.hr||3,5,true)}</span>
+      <span>💃 ${dots(s.dif||3,5,false)}</span>
+    </div>
+    ${s.notes?`<div class="sc-note">${esc(s.notes)}</div>`:''}
+    <div class="sc-actions" onclick="event.stopPropagation()">
+      <button class="btn btn-sm btn-g" onclick="openEdit('${s.id}')">✏️ 編輯</button>
+      <button class="btn btn-sm btn-del" onclick="delSong('${s.id}')">🗑️ 刪除</button>
+    </div>
+  </div>`;
+}
+
+// ── Song Modal ─────────────────────────────────────────
+let editId=null;
+
+function openAdd(){
+  editId=null;
+  document.getElementById('modal-ttl').textContent='新增歌曲';
+  document.getElementById('song-form').reset();
+  document.getElementById('eid').value='';
+  document.getElementById('fjd').value=toDS(new Date());
+  setR('hr',3); setR('dif',3);
+  document.getElementById('fzin').checked=false;
+  document.getElementById('zinnum-g').style.display='none';
+  document.getElementById('zin-lbl').textContent='非 ZIN';
+  document.getElementById('song-modal').classList.add('open');
+}
+
+function openEdit(id){
+  const s=S.songs.find(x=>x.id===id); if(!s) return;
+  editId=id;
+  document.getElementById('modal-ttl').textContent='編輯歌曲';
+  document.getElementById('eid').value=id;
+  document.getElementById('fn').value=s.name||'';
+  document.getElementById('fst').value=s.style||'';
+  document.getElementById('fjd').value=s.joinDate||'';
+  document.getElementById('fnote').value=s.notes||'';
+  document.getElementById('fznum').value=s.zinNum||'';
+  document.getElementById('fzin').checked=!!s.isZIN;
+  document.getElementById('zinnum-g').style.display=s.isZIN?'block':'none';
+  document.getElementById('zin-lbl').textContent=s.isZIN?'ZIN 歌曲':'非 ZIN';
+  setR('hr',s.hr||3); setR('dif',s.dif||3);
+  document.getElementById('song-modal').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('song-modal').classList.remove('open'); }
+
+function setR(field,v){
+  const gid=field==='hr'?'hr-g':'dif-g';
+  const hid=field==='hr'?'fhr':'fdif';
+  document.getElementById(hid).value=v;
+  document.querySelectorAll(`#${gid} .rbtn`).forEach(b=>b.classList.toggle('sel',+b.dataset.v===v));
+}
+
+function toggleZIN(){
+  const c=document.getElementById('fzin').checked;
+  document.getElementById('zinnum-g').style.display=c?'block':'none';
+  document.getElementById('zin-lbl').textContent=c?'ZIN 歌曲':'非 ZIN';
+}
+
+function saveSong(e){
+  e.preventDefault();
+  const name=document.getElementById('fn').value.trim();
+  if(!name){ toast('請輸入歌名','err'); return; }
+  const song={
+    id:editId||uid(), name,
+    style:document.getElementById('fst').value.trim(),
+    hr:+document.getElementById('fhr').value||3,
+    dif:+document.getElementById('fdif').value||3,
+    isZIN:document.getElementById('fzin').checked,
+    zinNum:document.getElementById('fznum').value.trim(),
+    joinDate:document.getElementById('fjd').value,
+    notes:document.getElementById('fnote').value.trim(),
+  };
+  if(editId){ const i=S.songs.findIndex(s=>s.id===editId); if(i>=0) S.songs[i]=song; }
+  else S.songs.push(song);
+  save(); closeModal(); renderSongs();
+  toast(editId?'歌曲已更新':'歌曲已新增');
+}
+
+function delSong(id){
+  confirm2('確認刪除','刪除後無法復原，確定嗎？',()=>{
+    S.songs=S.songs.filter(s=>s.id!==id);
+    S.plans.forEach(p=>{ p.items=p.items.filter(r=>r.sid!==id); });
+    save(); renderSongs(); toast('歌曲已刪除');
+  });
+}
+
+// ── Dates Page ─────────────────────────────────────────
+function renderDates(){
+  const sorted=[...S.cancelled].sort();
+  const out=document.getElementById('dates-out');
+  if(!sorted.length){ out.innerHTML='<p style="color:var(--muted);font-size:.83rem">尚無停課日期</p>'; return; }
+  out.innerHTML=sorted.map(d=>`<div class="dchip">📅 ${fmtD(d)}<button onclick="removeDate('${d}')" title="移除">×</button></div>`).join('');
+}
+
+function addDate(){
+  const v=document.getElementById('new-date').value;
+  if(!v){ toast('請選擇日期','err'); return; }
+  if(S.cancelled.includes(v)){ toast('此日期已存在','err'); return; }
+  S.cancelled.push(v); S.cancelled.sort(); save(); renderDates();
+  document.getElementById('new-date').value=''; toast('停課日已新增');
+}
+
+function removeDate(d){ S.cancelled=S.cancelled.filter(x=>x!==d); save(); renderDates(); toast('已移除'); }
+
+function confirmClear(){
+  confirm2('清除所有資料','將刪除全部歌曲、停課日和課程規劃，無法復原！',()=>{
+    const firstId=uid();
+    S={songs:[],cancelled:[...DEF_CANCELLED],plans:[{id:firstId,name:'課程一',items:[]}],curPlan:firstId};
+    save(); renderSongs(); renderDates(); renderPlanTabs(); renderRD();
+    toast('已清除所有資料');
+  });
+}
+
+// ── Confirm ────────────────────────────────────────────
+let cfCB=null;
+function confirm2(ttl,msg,cb){
+  document.getElementById('cf-ttl').textContent=ttl;
+  document.getElementById('cf-msg').textContent=msg;
+  cfCB=cb; document.getElementById('cf-overlay').classList.add('open');
+}
+function closeCF(){ document.getElementById('cf-overlay').classList.remove('open'); cfCB=null; }
+document.getElementById('cf-ok').onclick=()=>{ if(cfCB) cfCB(); closeCF(); };
+
+// ── Plan Tabs ──────────────────────────────────────────
+function renderPlanTabs(){
+  const wrap=document.getElementById('plan-tabs-wrap');
+  const canDel=S.plans.length>1;
+  const tabs=S.plans.map(p=>{
+    const isAct=p.id===S.curPlan;
+    return `<div class="plan-tab${isAct?' act':''}" onclick="switchPlan('${p.id}')">
+      <span class="plan-tab-name" title="${esc(p.name)}">${esc(p.name)}</span>
+      <button class="plan-tab-edit" onclick="event.stopPropagation();openRename('${p.id}')" title="重新命名">✏️</button>
+      ${canDel?`<button class="plan-tab-del" onclick="event.stopPropagation();deletePlan('${p.id}')" title="刪除">×</button>`:''}
+    </div>`;
+  }).join('');
+  wrap.innerHTML = tabs + `<button class="plan-add-btn" onclick="addPlan()" title="新增規劃版本">＋</button>`;
+}
+
+function switchPlan(id){
+  if(S.curPlan===id) return;
+  S.curPlan=id; save();
+  renderPlanTabs(); renderAvail(); renderRD();
+  document.getElementById('exp-area').style.display='none';
+}
+
+function addPlan(){
+  const names=['課程一','課程二','課程三','課程四','課程五','課程六','課程七','課程八','課程九','課程十'];
+  const name = names[S.plans.length] || `課程${S.plans.length+1}`;
+  const plan={id:uid(), name, items:[]};
+  S.plans.push(plan); S.curPlan=plan.id; save();
+  renderPlanTabs(); renderAvail(); renderRD();
+  document.getElementById('exp-area').style.display='none';
+  toast(`已新增「${name}」`);
+}
+
+let renamePlanId=null;
+function openRename(id){
+  renamePlanId=id;
+  const p=S.plans.find(x=>x.id===id); if(!p) return;
+  const inp=document.getElementById('rename-inp');
+  inp.value=p.name;
+  document.getElementById('rename-overlay').classList.add('open');
+  setTimeout(()=>{ inp.select(); inp.focus(); },80);
+}
+function closeRename(){ document.getElementById('rename-overlay').classList.remove('open'); renamePlanId=null; }
+function doRename(){
+  const val=document.getElementById('rename-inp').value.trim();
+  if(!val){ toast('請輸入名稱','err'); return; }
+  const p=S.plans.find(x=>x.id===renamePlanId); if(!p) return;
+  p.name=val; save(); closeRename(); renderPlanTabs(); toast('已重新命名');
+}
+
+function deletePlan(id){
+  if(S.plans.length<=1){ toast('至少需要保留一個版本','err'); return; }
+  const p=S.plans.find(x=>x.id===id);
+  confirm2(`刪除「${p?.name||'此版本'}」`,`Rundown 內容也會一併刪除，確定嗎？`,()=>{
+    S.plans=S.plans.filter(x=>x.id!==id);
+    if(S.curPlan===id) S.curPlan=S.plans[0].id;
+    save(); renderPlanTabs(); renderAvail(); renderRD();
+    document.getElementById('exp-area').style.display='none';
+    toast('已刪除版本');
+  });
+}
+
+// ── Rundown Page ───────────────────────────────────────
+function renderAvail(){
+  const q=(document.getElementById('rdq')?.value||'').toLowerCase();
+  const rdIds=new Set(getCurItems().filter(r=>r.type==='song').map(r=>r.sid));
+  let list=S.songs.map(s=>({...s,cnt:calcCount(s.joinDate),fam:getFam(calcCount(s.joinDate))}));
+  if(q) list=list.filter(s=>s.name.toLowerCase().includes(q)||(s.style||'').toLowerCase().includes(q));
+  list.sort((a,b)=>a.name.localeCompare(b.name,'zh'));
+
+  const out=document.getElementById('avail-out');
+  if(!list.length){ out.innerHTML='<div class="empty" style="padding:16px"><p>沒有歌曲</p></div>'; return; }
+  out.innerHTML=list.map(s=>{
+    const inRD=rdIds.has(s.id);
+    return `<div class="avail-item${inRD?' in-rd':''}" draggable="${!inRD}"
+      data-sid="${s.id}"
+      ondragstart="avDragStart(event,'${s.id}')"
+      ondragend="avDragEnd(event)">
+      <div style="flex:1">
+        <div class="ai-name">${esc(s.name)}</div>
+        <div class="ai-meta">${esc(s.style||'—')} · ${s.fam.lbl} (${s.cnt}次)</div>
+      </div>
+      <button class="btn btn-sm btn-p" ${inRD?'disabled title="已在Rundown"':''} onclick="addToRD('${s.id}')">+</button>
+    </div>`;
+  }).join('');
+}
+
+function renderRD(){
+  const items=getCurItems();
+  const songCnt=items.filter(r=>r.type==='song').length;
+  document.getElementById('rd-cnt').textContent=`(${songCnt}首)`;
+  const out=document.getElementById('rd-out');
+  if(!items.length){
+    out.innerHTML=`<div class="dropzone"
+      ondragover="rdDZOver(event)" ondragleave="rdDZLeave(event)" ondrop="rdDZDrop(event)">
+      拖曳歌曲到這裡，或點擊「+」加入
+    </div>`;
+    return;
+  }
+  out.innerHTML = items.map((item,i)=>rdItemHTML(item,i)).join('') +
+    `<div class="dropzone" style="padding:10px;margin-top:6px"
+      ondragover="rdDZOver(event)" ondragleave="rdDZLeave(event)" ondrop="rdDZDrop(event)">
+      拖到此處加到最後
+    </div>`;
+}
+
+function rdItemHTML(item, idx){
+  const items=getCurItems();
+  const snum=items.slice(0,idx+1).filter(r=>r.type==='song').length;
+
+  if(item.type==='water') return `
+    <div class="rd-item water" draggable="true" data-i="${idx}"
+      ondragstart="rdDragStart(event,${idx})" ondragend="rdDragEnd(event)"
+      ondragover="rdItemOver(event,${idx})" ondragleave="rdItemLeave(event)" ondrop="rdItemDrop(event,${idx})">
+      <div class="rd-num">💧</div>
+      <div class="rd-info"><div class="rd-name">喝水休息</div></div>
+      <div class="rd-acts">
+        <button class="ibtn up" onclick="mvRD(${idx},-1)">↑</button>
+        <button class="ibtn dn" onclick="mvRD(${idx},1)">↓</button>
+        <button class="ibtn rm" onclick="rmRD(${idx})">×</button>
+      </div>
+    </div>`;
+
+  if(item.type==='note') return `
+    <div class="rd-item note-item" data-i="${idx}"
+      ondragover="rdItemOver(event,${idx})" ondragleave="rdItemLeave(event)" ondrop="rdItemDrop(event,${idx})">
+      <div class="rd-num" style="color:#D97706;font-size:.9rem">📝</div>
+      <div class="rd-info">
+        <textarea class="note-ta" rows="2"
+          draggable="false"
+          ondragstart="event.stopPropagation()"
+          onblur="saveNoteText(${idx},this.value)"
+          placeholder="輸入備註，例如：說明舞步、提示學員重點…"
+        >${esc(item.text||'')}</textarea>
+      </div>
+      <div class="rd-acts">
+        <button class="ibtn up" onclick="mvRD(${idx},-1)">↑</button>
+        <button class="ibtn dn" onclick="mvRD(${idx},1)">↓</button>
+        <button class="ibtn rm" onclick="rmRD(${idx})">×</button>
+      </div>
+    </div>`;
+
+  const s=S.songs.find(x=>x.id===item.sid); if(!s) return '';
+  const cnt=calcCount(s.joinDate), fam=getFam(cnt);
+  return `<div class="rd-item" draggable="true" data-i="${idx}"
+    ondragstart="rdDragStart(event,${idx})" ondragend="rdDragEnd(event)"
+    ondragover="rdItemOver(event,${idx})" ondragleave="rdItemLeave(event)" ondrop="rdItemDrop(event,${idx})">
+    <div class="rd-num">${snum}</div>
+    <div class="rd-info">
+      <div class="rd-name">${esc(s.name)}</div>
+      <div class="rd-meta">${esc(s.style||'—')} · <span class="fbadge ${fam.cls}" style="padding:1px 6px;font-size:.68rem">${fam.lbl}</span></div>
+    </div>
+    <div class="rd-acts">
+      <button class="ibtn up" onclick="mvRD(${idx},-1)">↑</button>
+      <button class="ibtn dn" onclick="mvRD(${idx},1)">↓</button>
+      <button class="ibtn rm" onclick="rmRD(${idx})">×</button>
+    </div>
+  </div>`;
+}
+
+function addToRD(sid){
+  const items=getCurItems();
+  if(items.filter(r=>r.type==='song').length>=20){ toast('最多 20 首歌','err'); return; }
+  if(items.some(r=>r.sid===sid)){ toast('已在 Rundown 中','err'); return; }
+  items.push({type:'song',sid}); save(); renderRD(); renderAvail(); toast('已加入');
+}
+
+function addWater(){ getCurItems().push({type:'water'}); save(); renderRD(); }
+
+function addNote(){ getCurItems().push({type:'note',text:''}); save(); renderRD(); }
+
+// onblur 儲存備註文字，不重新 render 以避免失焦
+function saveNoteText(idx, val){
+  const items=getCurItems();
+  if(items[idx]&&items[idx].type==='note'){ items[idx].text=val; save(); }
+}
+
+function rmRD(i){ getCurItems().splice(i,1); save(); renderRD(); renderAvail(); }
+
+function mvRD(i,d){
+  const items=getCurItems();
+  const j=i+d; if(j<0||j>=items.length) return;
+  [items[i],items[j]]=[items[j],items[i]]; save(); renderRD();
+}
+
+function clearRD(){ getCurPlan().items=[]; save(); renderRD(); renderAvail(); document.getElementById('exp-area').style.display='none'; }
+
+// Drag: available → rundown
+let avDragId=null;
+function avDragStart(e,sid){ avDragId=sid; rdDragIdx=null; e.dataTransfer.effectAllowed='copy'; e.target.classList.add('dragging'); }
+function avDragEnd(e){ e.target.classList.remove('dragging'); }
+function rdDZOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function rdDZLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+function rdDZDrop(e){
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if(avDragId){ addToRD(avDragId); avDragId=null; }
+}
+
+// Drag: reorder within rundown
+let rdDragIdx=null;
+function rdDragStart(e,i){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='BUTTON'){ e.preventDefault(); return; }
+  rdDragIdx=i; avDragId=null; e.dataTransfer.effectAllowed='move'; e.currentTarget.style.opacity='.4';
+}
+function rdDragEnd(e){ e.currentTarget.style.opacity=''; document.querySelectorAll('.rd-item').forEach(el=>el.classList.remove('drag-over')); }
+function rdItemOver(e,i){ e.preventDefault(); if(rdDragIdx!==null||avDragId) e.currentTarget.classList.add('drag-over'); }
+function rdItemLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+function rdItemDrop(e,i){
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if(rdDragIdx!==null && rdDragIdx!==i){
+    const items=getCurItems();
+    const item=items.splice(rdDragIdx,1)[0]; items.splice(i,0,item); save(); renderRD();
+    rdDragIdx=null;
+  } else if(avDragId){
+    addToRD(avDragId); avDragId=null;
+  }
+}
+
+// ── Export ─────────────────────────────────────────────
+function doExport(){
+  const items=getCurItems();
+  if(!items.length){ toast('Rundown 是空的','err'); return; }
+  const plan=getCurPlan();
+  const today=new Date();
+  const ds=today.getFullYear()+'/'+(today.getMonth()+1+'').padStart(2,'0')+'/'+(''+today.getDate()).padStart(2,'0');
+  let lines=[`📋 Zumba 課程 Rundown — ${plan.name}`, `日期：${ds}`, `${'─'.repeat(32)}`, ''];
+  let sn=0;
+  items.forEach(item=>{
+    if(item.type==='water'){ lines.push('', '💧 ── 喝水休息 ──', ''); return; }
+    if(item.type==='note'){
+      if(item.text&&item.text.trim()){
+        const noteLines=item.text.trim().split('\n');
+        lines.push(`   📝 ${noteLines[0]}`);
+        noteLines.slice(1).forEach(l=>lines.push(`      ${l}`));
+        lines.push('');
+      }
+      return;
+    }
+    const s=S.songs.find(x=>x.id===item.sid); if(!s) return;
+    sn++; const cnt=calcCount(s.joinDate), fam=getFam(cnt);
+    const hr='❤'.repeat(s.hr||3)+'♡'.repeat(5-(s.hr||3));
+    const df='★'.repeat(s.dif||3)+'☆'.repeat(5-(s.dif||3));
+    lines.push(`${String(sn).padStart(2,'0')}. ${s.name}`);
+    lines.push(`    曲風：${s.style||'—'}  ❤ ${hr}  ★ ${df}`);
+    lines.push(`    熟悉度：${fam.lbl}（第 ${cnt} 次）${s.isZIN?' | ZIN '+(s.zinNum||''):''}`);
+    if(s.notes) lines.push(`    歌曲備註：${s.notes}`);
+    lines.push('');
+  });
+  lines.push(`${'─'.repeat(32)}`);
+  lines.push(`共 ${sn} 首歌`);
+  document.getElementById('exp-ta').value=lines.join('\n');
+  document.getElementById('exp-area').style.display='block';
+  document.getElementById('exp-area').scrollIntoView({behavior:'smooth'});
+}
+
+function copyExp(){
+  const ta=document.getElementById('exp-ta'); ta.select();
+  navigator.clipboard?.writeText(ta.value).then(()=>toast('已複製')).catch(()=>{ document.execCommand('copy'); toast('已複製'); });
+}
+
+// ── Init ───────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
