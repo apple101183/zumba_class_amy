@@ -236,6 +236,7 @@ input:checked+.tslider::before{transform:translateX(21px)}
       <option value="fam">依熟悉度</option>
     </select>
     <button class="btn btn-p" onclick="openAdd()">➕ 新增歌曲</button>
+    <button class="btn" style="background:#FEF3C7;color:#92400E;border:1.5px solid #FCD34D;font-weight:600" onclick="importFromExcel()">📥 匯入 Excel</button>
   </div>
   <div class="stats" id="stats-bar"></div>
   <div id="songs-out"></div>
@@ -1001,6 +1002,49 @@ function doExport(){
 function copyExp(){
   const ta=document.getElementById('exp-ta'); ta.select();
   navigator.clipboard?.writeText(ta.value).then(()=>toast('已複製')).catch(()=>{ document.execCommand('copy'); toast('已複製'); });
+}
+
+// ── Excel Import ───────────────────────────────────────
+const IMPORT_SONGS = [
+  {"id":"imp000","name":"Amor De Verano - 118","style":"暖身","hr":3,"dif":2,"joinDate":"2025-12-17","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp001","name":"眉飛色舞","style":"暖身","hr":3,"dif":2,"joinDate":"2026-01-07","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp002","name":"阿福羅火山","style":"肌力","hr":4,"dif":2,"joinDate":"2026-03-04","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp003","name":"baby","style":"Pop / EDM","hr":3,"dif":3,"joinDate":"2026-04-22","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp004","name":"Sandungueo - 121","style":"𝐒𝐚𝐥𝐬𝐚","hr":3,"dif":3,"joinDate":"2026-02-11","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp005","name":"we go back - Zin121","style":"calypso","hr":3,"dif":3,"joinDate":"2026-03-18","isZIN":true,"zinNum":"Z121","notes":""},
+  {"id":"imp006","name":"Gasolina Zin","style":"Reggaeton","hr":3,"dif":3,"joinDate":"2026-01-21","isZIN":true,"zinNum":"","notes":""},
+  {"id":"imp007","name":"Fate","style":"KPOP - Hip pop","hr":3,"dif":2,"joinDate":"2026-05-06","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp008","name":"Diva - Zin121","style":"Brazilian Funk","hr":3,"dif":3,"joinDate":"2026-04-22","isZIN":true,"zinNum":"Z121","notes":""},
+  {"id":"imp009","name":"Boom Body-Zin121","style":"Dancehall","hr":3,"dif":3,"joinDate":"2026-03-04","isZIN":true,"zinNum":"Z121","notes":""},
+  {"id":"imp010","name":"El Mambo Llama - zin 120","style":"Mambo","hr":3,"dif":2,"joinDate":"2026-01-07","isZIN":true,"zinNum":"Z120","notes":""},
+  {"id":"imp011","name":"Haypa","style":"Merengue","hr":3,"dif":4,"joinDate":"2025-12-17","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp012","name":"Insomnia","style":"Pop / EDM","hr":2,"dif":3,"joinDate":"2026-03-04","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp013","name":"Zoo","style":"Upbeat Pop/Dance","hr":3,"dif":4,"joinDate":"2026-01-07","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp014","name":"die with a smile salsa","style":"𝐒𝐚𝐥𝐬𝐚","hr":2,"dif":3,"joinDate":"2026-04-15","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp015","name":"Goodbye bye- 華沙","style":"Kpop","hr":3,"dif":4,"joinDate":"2026-01-28","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp016","name":"My Cancion Favorita - 122","style":"冷靜","hr":2,"dif":3,"joinDate":"2026-04-22","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp017","name":"I love it - zin 122","style":"Dancehall","hr":3,"dif":3,"joinDate":"","isZIN":true,"zinNum":"Z122","notes":""},
+  {"id":"imp018","name":"bye bye","style":"Merengue","hr":3,"dif":3,"joinDate":"","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp019","name":"Sexbomb","style":"搖滾 (Rock)","hr":3,"dif":3,"joinDate":"","isZIN":false,"zinNum":"","notes":""},
+  {"id":"imp020","name":"chanel","style":"","hr":3,"dif":3,"joinDate":"","isZIN":false,"zinNum":"","notes":""}
+];
+
+function importFromExcel(){
+  const msg = S.songs.length > 0
+    ? `目前已有 ${S.songs.length} 首歌曲。匯入會新增 Excel 中尚未存在的歌曲（依歌名比對），不會覆蓋現有資料。確定嗎？`
+    : `將匯入 ${IMPORT_SONGS.length} 首歌曲，確定嗎？`;
+  confirm2('匯入 Excel 資料', msg, ()=>{
+    const existingNames = new Set(S.songs.map(s=>s.name.trim().toLowerCase()));
+    let added = 0;
+    IMPORT_SONGS.forEach(s=>{
+      if(!existingNames.has(s.name.trim().toLowerCase())){
+        S.songs.push({...s, id: uid()});
+        added++;
+      }
+    });
+    save(); renderSongs();
+    toast(`已匯入 ${added} 首新歌曲${ IMPORT_SONGS.length-added > 0 ? `，${IMPORT_SONGS.length-added} 首重複略過` : '' }`);
+  });
 }
 
 // ── Init ───────────────────────────────────────────────
